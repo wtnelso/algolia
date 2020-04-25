@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+	<style type="text/css">
+		.ui-autocomplete {
+		  position: absolute;
+		  top: 100%;
+		  left: 0;
+		  z-index: 1000;
+		  display: none;
+		  float: left;
+		  min-width: 160px;
+		  padding: 5px 0;
+		  margin: 2px 0 0;
+		  list-style: none;
+		  font-size: 14px;
+		  text-align: left;
+		  background-color: #ffffff;
+		  border: 1px solid #cccccc;
+		  border: 1px solid rgba(0, 0, 0, 0.15);
+		  border-radius: 4px;
+		  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+		  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+		  background-clip: padding-box;
+		}
+
+		.ui-autocomplete > li > div {
+		  display: block;
+		  padding: 3px 20px;
+		  clear: both;
+		  font-weight: normal;
+		  line-height: 1.42857143;
+		  color: #333333;
+		  white-space: nowrap;
+		}
+
+		.ui-state-hover,
+		.ui-state-active,
+		.ui-state-focus {
+		  text-decoration: none;
+		  color: #262626;
+		  background-color: #f5f5f5;
+		  cursor: pointer;
+		}
+
+		.ui-helper-hidden-accessible {
+		  border: 0;
+		  clip: rect(0 0 0 0);
+		  height: 1px;
+		  margin: -1px;
+		  overflow: hidden;
+		  padding: 0;
+		  position: absolute;
+		  width: 1px;
+		}
+	</style>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"></link>
+	<link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.16.0/dist/bootstrap-table.min.css">
+
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch-lite.umd.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/algoliasearch@4/dist/algoliasearch.umd.js"></script>
+	<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  	<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-autocomplete/1.0.7/jquery.auto-complete.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-table@1.16.0/dist/bootstrap-table.min.js"></script>
+
+
+  
+	<script type="text/javascript">
+		const hits_array = [];
+		const applicationId = 'GZ4216LR0G';
+		const searchOnlyApiKey = 'fcef9d7ea7dfcd1323d3eb252753539e';
+		const indexNameTeams = 'dev_Basketball_Teams';
+		const indexNamePlayers = 'dev_Basketball_Players';
+		const client = algoliasearch(applicationId, searchOnlyApiKey);
+		const indexTeam = client.initIndex(indexNameTeams);
+		const indexPlayers = client.initIndex(indexNamePlayers);
+
+
+		$(document).ready(function(){
+			var search_string = $( "#search_box" ).val();
+			indexTeam.search(search_string, {
+				  attributesToRetrieve: ['name', 'location'],
+				  hitsPerPage: 50,
+				}).then(({ hits }) => {
+			  $.each( hits, function( key, value ) {
+			  	  var team = {
+			  	  	"name" : value.name,
+			  	  	"location" : value.location,
+			  	  	"title" : value.name + " (" + value.location + ")"
+			  	  };
+				  hits_array.push(team);
+				});
+			  $( "#search_box" ).autocomplete({
+			      source: hits_array.map(d => d.title),
+			      select: function (event, ui) {
+			      	var team = hits_array.find(x => x.title == ui.item.value).name;
+			      	indexPlayers.search(team).then(({ hits }) => {
+				  		$.each( hits, function( key, value ) {
+				  			$('#table').bootstrapTable({data: hits});
+				  		});
+				  	});
+			      	
+				  },
+			    });
+			});
+		});
+	</script>
+	
+	<body>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+					
+					<div class="jumbotron">
+						<h2>
+							Hello, Algolia!
+						</h2>
+						<p>
+							Here is a simple web app where you can search for your favorite basketball team, and if that team has data about its players, you'll be able to view the team's top scorers in the table!
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-md-4">
+					<img src="https://media0.giphy.com/media/l46CqLVMWzaJUFPLW/source.gif" alt="MJ" width="100%">
+				</div>
+				<div class="col-md-4">
+					<input id='search_box' type="text" name="name" class="form-control" placeholder="Search here..." />
+				</div>
+				<div class="col-md-4">
+					<table id="table" class="table table-hover" data-height="250">
+					  <thead>
+					    <tr>
+					      <th data-field="name">Player Name</th>
+					      <th data-field="points">Points</th>
+					    </tr>
+					  </thead>
+					</table>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
